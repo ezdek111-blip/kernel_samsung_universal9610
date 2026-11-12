@@ -1,0 +1,33 @@
+name: Build KernelSU-Next
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Unduh Source Kernel
+        uses: actions/checkout@v4
+        with:
+          depth: 1
+
+      - name: Pasang Alat Build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache curl flex git libssl-dev libelf-dev gcc-aarch64-linux-gnu clang lld
+
+      - name: Suntikkan KernelSU-Next
+        run: |
+          curl -LSs "https://githubusercontent.com" | bash -s next
+
+      - name: Konfigurasi & Kompilasi Kernel
+        run: |
+          # GANTI 'nama_defconfig_hp_anda' dengan nama defconfig perangkat Anda
+          make ARCH=arm64 O=out nama_defconfig_hp_anda
+          echo "CONFIG_KSU=y" >> out/.config
+          make -j$(nproc) ARCH=arm64 O=out CC=clang CROSS_COMPILE=aarch64-linux-gnu-
+
+      - name: Simpan Hasil Kernel
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hasil-KernelSU-Next
+          path: out/arch/arm64/boot/Image*
